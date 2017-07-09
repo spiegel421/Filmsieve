@@ -1,6 +1,7 @@
 # Stores every tagging instance.
 import mysql.connector
 from mysql.connector import errorcode
+import numpy as np
 
 DB_NAME = 'rawdata'
 
@@ -84,7 +85,11 @@ def tag_item(item, tag):
              "ON DUPLICATE KEY UPDATE "
              "count = count + 1; ")
              
-  update_totalcount = "SET @totalcount = @totalcount + 1; "
+  update_totalcount = "IF (SELECT @totalcount IS NULL) "
+                      "THEN SET @totalcount = 0; "
+                      "ELSE SET @totalcount = @totalcount + 1; "
+                      "END IF; "
+                      
   
   cursor.execute(update_itemtagcount, (item, tag))
   cursor.execute(update_itemcount, (item))
@@ -94,3 +99,39 @@ def tag_item(item, tag):
   cnx.commit()
   cursor.close()
   cnx.close()
+
+def find_PPMI(item, tag):
+  cnx = mysql.connector.connect(user='root', password='Reverie42', buffered=True)
+  cursor = cnx.cursor()
+  cnx.database = DB_NAME
+  
+  find_itemtagcount = ("SELECT count FROM itemtagcount "
+                       "WHERE item = %s AND tag = %s; ")
+  
+  find_itemcount = ("SELECT count FROM itemcount "
+                    "WHERE item = %s; ")
+  
+  find_tagcount = ("SELECT count FROM tagcount "
+                   "WHERE tag = %s; ")
+  
+  find_totalcount = ("SELECT @totalcount; ")
+  
+  cursor.execute(find_totalcount)
+  for (count) in cursor:
+    total = count
+  
+  cursor.execute(find_itemtagcount, (item, tag))
+  for (count) in cursor:
+    pr_itemtag = float(count) / total
+    
+  cursor.execute(find_itemcount, (item))
+  for (count) in cursor:
+    pr_item = float(count) / total
+    
+  cursor.execute(find_tagcount, (tag))
+  for (count) in cursor:
+    pr_tag = float(count) / total
+    
+  pmi = np.log(pr_itemtag / (pr_item * pr_tag))
+  ppmi = 2 ** (pmi + np.log(pr_itemtag))
+  return ppmi
