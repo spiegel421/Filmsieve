@@ -134,8 +134,9 @@ def find_PPMI(item, tag):
     
   pmi = np.log(pr_itemtag / (pr_item * pr_tag))
   ppmi = 2 ** (pmi + np.log(pr_itemtag))
-  return ppmi
 
   cnx.commit()
   cursor.close()
   cnx.close()
+  
+  return ppmi
