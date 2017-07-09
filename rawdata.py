@@ -1,4 +1,4 @@
-# Stores every tag instance.
+# Stores every tagging instance.
 import mysql.connector
 from mysql.connector import errorcode
 
